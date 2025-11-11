@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import { connectDB } from './config/db.js';
+import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
 import providerRoutes from './routes/providerRoutes.js';
 import uploadRoutes from "./routes/uploadRoutes.js";
