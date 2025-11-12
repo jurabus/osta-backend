@@ -21,12 +21,22 @@ export const login = async (req, res) => {
     const provider = await Provider.findOne({ email });
     if (!provider || !(await provider.comparePassword(password)))
       return fail(res, 401, 'Invalid credentials');
+
     const token = sign({ id: provider._id, role: 'provider', kind: 'provider' });
-    return ok(res, { provider, token });
+    return ok(res, {
+      token,
+      kind: 'provider',
+      provider: {
+        _id: provider._id,
+        name: provider.name,
+        email: provider.email
+      }
+    });
   } catch (e) {
     return fail(res, 400, e.message);
   }
 };
+
 
 // LIST (optionally filter by category ?category=)
 export const listProviders = async (req, res) => {

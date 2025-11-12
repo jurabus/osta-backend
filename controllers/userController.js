@@ -21,8 +21,13 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password)))
       return fail(res, 401, 'Invalid credentials');
-    const token = sign({ id: user._id, role: user.role, kind: 'user' });
-    return ok(res, { user, token });
+
+    const token = sign({ id: user._id, role: 'user', kind: 'user' });
+    return ok(res, {
+      token,
+      kind: 'user',
+      user: { _id: user._id, name: user.name, email: user.email }
+    });
   } catch (e) {
     return fail(res, 400, e.message);
   }
