@@ -1,17 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-/**
- * Requirements:
- * - name, email, password, category (profession)
- * - rating (avg of ratings out of 10)
- * - reviews (string list)
- *
- * We'll keep:
- *   ratings: [Number]  // each 0..10
- *   reviews: [String]
- * rating is a computed field (virtual) => average of "ratings"
- */
 const providerSchema = new mongoose.Schema(
   {
     name: { type: String, trim: true, required: true },
@@ -19,8 +8,11 @@ const providerSchema = new mongoose.Schema(
     password: { type: String, required: true },
     category: { type: String, index: true, required: true },
 
-    ratings: { type: [Number], default: [] }, // each 0..10
-    reviews: { type: [String], default: [] }
+    avatar: { type: String, default: '' },     // Profile image URL
+    website: { type: String, default: '' },    // Provider’s website link
+
+    ratings: { type: [Number], default: [] },  // Rating values 0..10
+    reviews: { type: [String], default: [] },  // Text reviews
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
@@ -28,7 +20,7 @@ const providerSchema = new mongoose.Schema(
 providerSchema.virtual('rating').get(function () {
   if (!this.ratings?.length) return 0;
   const sum = this.ratings.reduce((a, b) => a + b, 0);
-  return Math.round((sum / this.ratings.length) * 10) / 10; // 1 decimal
+  return Math.round((sum / this.ratings.length) * 10) / 10;
 });
 
 providerSchema.pre('save', async function (next) {
