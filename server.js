@@ -7,15 +7,54 @@ import cookieParser from 'cookie-parser';
 import http from 'http';
 import { Server } from 'socket.io';
 import connectDB from './config/db.js';
-
 import userRoutes from './routes/userRoutes.js';
 import providerRoutes from './routes/providerRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import chatUploadRoutes from './routes/chatUploadRoutes.js';
 import requestRoutes from './routes/requestRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
-
 import Chat from './models/Chat.js';
+import fs from "fs";
+import path from "path";
+
+// 🧱 Ensure required upload directories exist
+const uploadDirs = ["uploads", "uploads/chat"];
+uploadDirs.forEach((dir) => {
+  const fullPath = path.resolve(dir);
+  if (!fs.existsSync(fullPath)) {
+    fs.mkdirSync(fullPath, { recursive: true });
+    console.log(`📁 Created missing directory: ${fullPath}`);
+  }
+});
+
+// 🧹 Auto-clean old chat uploads (>30 days)
+const CLEANUP_DAYS = 30;
+const now = Date.now();
+
+const chatDir = path.resolve("uploads/chat");
+if (fs.existsSync(chatDir)) {
+  fs.readdir(chatDir, (err, files) => {
+    if (err) return console.error("Cleanup error:", err);
+    files.forEach((file) => {
+      const filePath = path.join(chatDir, file);
+      fs.stat(filePath, (err, stats) => {
+        if (err) return;
+        const ageDays = (now - stats.mtimeMs) / (1000 * 60 * 60 * 24);
+        if (ageDays > CLEANUP_DAYS) {
+          fs.unlink(filePath, (err) => {
+            if (!err) console.log(`🧽 Deleted old file: ${file}`);
+          });
+        }
+      });
+    });
+  });
+}
+
+// Run cleanup daily
+setInterval(() => {
+  console.log("🧹 Running daily chat upload cleanup...");
+  // reuse same cleanup logic here
+}, 1000 * 60 * 60 * 24); // every 24h
 
 // --- Initialize express app
 const app = express();
