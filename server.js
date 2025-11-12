@@ -75,7 +75,7 @@ io.on('connection', (socket) => {
   // --- Handle message sending
   socket.on('message', async (msg) => {
     try {
-      const { requestId, senderId, text, type, fileUrl } = msg;
+      const { requestId, senderId, text, type, fileUrl, senderName } = msg;
       if (!requestId || !senderId) return;
 
       // 🧩 Save message (upsert ensures chat exists)
@@ -85,6 +85,7 @@ io.on('connection', (socket) => {
           $push: {
             messages: {
               senderId,
+			  senderName: senderName || "Unknown",
               text,
               type: type || (fileUrl ? 'image' : 'text'),
               fileUrl: fileUrl || '',
