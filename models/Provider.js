@@ -10,7 +10,9 @@ const providerSchema = new mongoose.Schema(
 
     avatar: { type: String, default: '' },     // Profile image URL
     website: { type: String, default: '' },    // Provider’s website link
-
+description: { type: String, default: '' },
+skills: { type: [String], default: [] },
+gallery: { type: [String], default: [] },
     ratings: { type: [Number], default: [] },  // Rating values 0..10
     reviews: { type: [String], default: [] },  // Text reviews
   },
