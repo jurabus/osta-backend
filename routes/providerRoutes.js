@@ -2,7 +2,7 @@ import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import {
   signup, login,
-  listProviders, getProvider, createProvider, updateProvider, deleteProvider,
+  listProviders, getProvider, updateProvider, deleteProvider,
   addRating
 } from '../controllers/providerController.js';
 
