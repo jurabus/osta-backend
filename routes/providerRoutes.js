@@ -1,10 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
-import {
-  signup, login,
-  listProviders, getProvider, updateProvider, deleteProvider,
-  addRating
-} from '../controllers/providerController.js';
+import { signup, login, listProviders, updateProvider, addRating } from '../controllers/providerController.js';
 
 const router = express.Router();
 
