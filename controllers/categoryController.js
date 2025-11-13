@@ -111,27 +111,47 @@ export const providersByCategory = async (req, res) => {
 };
 
 // For Home: categories with first N providers each
+// For Home: categories with first N subcategories + providers each
 export const categoriesWithProviders = async (req, res) => {
   try {
     const catsLimit = parseInt(req.query.catsLimit || "10", 10);
     const providersLimit = parseInt(req.query.providersLimit || "10", 10);
+    const subLimit = parseInt(req.query.subLimit || "5", 10); // max 5 subcategories per category
 
     const categories = await Category.find({})
       .sort({ name: 1 })
       .limit(catsLimit)
       .lean();
 
-    const payload = [];
+    const rows = [];
+
     for (const c of categories) {
-      const providers = await Provider.find({ category: c.name })
-        .sort({ rating: -1, createdAt: -1 })
-        .limit(providersLimit)
+      // fetch up to 5 subcategories for this category
+      const subcats = await Subcategory.find({ category: c.name })
+        .sort({ name: 1 })
+        .limit(subLimit)
         .lean();
-      payload.push({ category: c, providers });
+
+      const subPayload = [];
+
+      for (const s of subcats) {
+        const providers = await Provider.find({ subcategories: s.name })
+          .sort({ createdAt: -1 })
+          .limit(providersLimit);
+
+        subPayload.push({
+          subcategory: s,
+          // include virtual rating by using document.toJSON()
+          providers: providers.map((p) => p.toJSON()),
+        });
+      }
+
+      rows.push({ category: c, subcategories: subPayload });
     }
 
-    return ok(res, { rows: payload });
+    return ok(res, { rows });
   } catch (e) {
     return fail(res, 400, e.message);
   }
 };
+

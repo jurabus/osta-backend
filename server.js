@@ -16,6 +16,9 @@ import chatRoutes from './routes/chatRoutes.js';
 import Chat from './models/Chat.js';
 import fs from "fs";
 import path from "path";
+import subcategoryRoutes from "./routes/subcategoryRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
+
 
 // 🧱 Ensure required upload directories exist
 const uploadDirs = ["uploads", "uploads/chat"];
@@ -71,6 +74,8 @@ app.use(morgan('dev'));
 await connectDB();
 
 // --- Routes
+app.use("/api/categories", categoryRoutes);
+app.use("/api/subcategories", subcategoryRoutes);
 app.use('/api/upload/chat', chatUploadRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/requests', requestRoutes);

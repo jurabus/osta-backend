@@ -7,12 +7,15 @@ const providerSchema = new mongoose.Schema(
     email: { type: String, unique: true, index: true, required: true, lowercase: true },
     password: { type: String, required: true },
     category: { type: String, index: true, required: true },
+	    // 🔹 NEW: multiple categories & subcategories by name
+    categories: { type: [String], default: [] },      // e.g. ["Design", "Education"]
+    subcategories: { type: [String], default: [] },   // e.g. ["Logo Design", "Math Tutor"]
 
     avatar: { type: String, default: '' },     // Profile image URL
     website: { type: String, default: '' },    // Provider’s website link
-description: { type: String, default: '' },
-skills: { type: [String], default: [] },
-gallery: { type: [String], default: [] },
+    description: { type: String, default: '' },
+    skills: { type: [String], default: [] },
+    gallery: { type: [String], default: [] },
     ratings: { type: [Number], default: [] },  // Rating values 0..10
     reviews: { type: [String], default: [] },  // Text reviews
   },
