@@ -90,10 +90,7 @@ export const updateProvider = async (req, res) => {
   }
 };
 
-export const deleteProvider = async (req, res) => {
-  const doc = await Provider.findByIdAndDelete(req.params.id);
-  return doc ? ok(res, { deleted: doc._id }) : fail(res, 404, 'Not found');
-};
+
 
 // Ratings & reviews
 export const addRating = async (req, res) => {
