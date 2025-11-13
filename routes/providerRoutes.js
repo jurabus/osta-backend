@@ -9,13 +9,10 @@ router.post('/signup', signup);
 router.post('/login', login);
 
 // read/search
-router.get('/', listProviders);                   // ?category=photography
-router.get('/:id', getProvider);
+router.get('/', listProviders);   
 
 // admin-ish crud
-router.post('/', verifyToken, createProvider);
 router.put('/:id', verifyToken, updateProvider);
-router.delete('/:id', verifyToken, deleteProvider);
 
 // rating
 router.post('/:id/rate', addRating);
