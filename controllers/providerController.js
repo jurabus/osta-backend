@@ -23,6 +23,15 @@ export const signup = async (req, res) => {
   }
 };
 
+export const getProvider = async (req, res) => {
+  try {
+    const doc = await Provider.findById(req.params.id);
+    if (!doc) return fail(res, 404, "Provider not found");
+    return ok(res, doc);
+  } catch (e) {
+    return fail(res, 400, e.message);
+  }
+};
 
 export const login = async (req, res) => {
   try {
