@@ -1,4 +1,5 @@
 // controllers/categoryController.js
+import Subcategory from "../models/Subcategory.js"; 
 import Category from "../models/Category.js";
 import Provider from "../models/Provider.js"; // existing model that has "category" (string)
 import { ok, fail } from "../utils/responses.js";
@@ -93,7 +94,13 @@ export const providersByCategory = async (req, res) => {
     if (!cat) return fail(res, 404, "Category not found");
 
     // Existing Provider model stores string 'category'
-    const match = { category: cat.name };
+    const match = {
+  $or: [
+    { category: cat.name },      // legacy primary category
+    { categories: cat.name }     // new multi-category system
+  ]
+};
+
 
     const items = await Provider.find(match)
       .sort({ rating: -1, createdAt: -1 })
