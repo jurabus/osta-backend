@@ -6,19 +6,30 @@ import { v4 as uuidv4 } from "uuid";
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() }).single("image");
 
-// Extract and delete Firebase file by its public URL
-async function deleteFileByUrl(url) {
+// Extract path from ANY Firebase URL (old or new style)
+function extractFilePath(url) {
   try {
-    if (!url) return;
-
     const decoded = decodeURIComponent(url);
-    const match = decoded.match(/\/o\/(.+)\?alt=media/);
 
-    if (match && match[1]) {
-      const filePath = match[1];
-      await bucket.file(filePath).delete({ ignoreNotFound: true });
-      console.log(`🗑 Deleted: ${filePath}`);
-    }
+    // Works for BOTH old and new bucket systems
+    const match =
+      decoded.match(/\/o\/(.+)\?/) || // old style
+      decoded.match(new RegExp(`${bucket.name}\/(.+)$`)); // new GCS style
+
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+// DELETE Firebase file
+async function deleteFileByUrl(url) {
+  const filePath = extractFilePath(url);
+  if (!filePath) return;
+
+  try {
+    await bucket.file(filePath).delete({ ignoreNotFound: true });
+    console.log(`🗑 Deleted: ${filePath}`);
   } catch (e) {
     console.warn("⚠ Delete failed:", e.message);
   }
@@ -27,12 +38,21 @@ async function deleteFileByUrl(url) {
 // POST /api/upload
 router.post("/", (req, res) => {
   upload(req, res, async (err) => {
-    if (err) return res.status(400).json({ success: false, message: err.message });
-    if (!req.file) return res.status(400).json({ success: false, message: "No image uploaded" });
+    if (err)
+      return res.status(400).json({ success: false, message: err.message });
+
+    if (!req.file)
+      return res
+        .status(400)
+        .json({ success: false, message: "No image uploaded" });
 
     try {
       const oldUrl = req.body.oldUrl;
-      const fileName = `uploads/${Date.now()}-${uuidv4()}-${req.file.originalname}`;
+
+      const fileName = `uploads/${Date.now()}-${uuidv4()}-${
+        req.file.originalname
+      }`;
+
       const file = bucket.file(fileName);
 
       await file.save(req.file.buffer, {
@@ -42,16 +62,19 @@ router.post("/", (req, res) => {
         },
       });
 
+      // Make file public
       await file.makePublic();
 
-      const publicUrl =
-        `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(fileName)}?alt=media`;
+      // ⭐ FIX: USE new GCS public URL
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
 
       if (oldUrl) await deleteFileByUrl(oldUrl);
 
-      res.json({ success: true, url: publicUrl });
+      return res.json({ success: true, url: publicUrl });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      return res
+        .status(500)
+        .json({ success: false, message: error.message });
     }
   });
 });
