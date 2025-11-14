@@ -59,9 +59,10 @@ export const sendMessage = async (req, res) => {
         $push: {
           messages: {
             senderId,
-            text,
-            type: type || (fileUrl ? "image" : "text"),
-            fileUrl,
+            fileUrl: req.body.fileUrl || "",
+type: "image",
+text: req.body.text || "",
+
           },
         },
       },
