@@ -68,6 +68,7 @@ router.post("/", (req, res) => {
       // ⭐ FIX: USE new GCS public URL
       const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
 
+
       if (oldUrl) await deleteFileByUrl(oldUrl);
 
       return res.json({ success: true, url: publicUrl });
