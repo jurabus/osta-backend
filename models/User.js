@@ -15,9 +15,12 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: { type: String, default: 'user' },
 
-    // ⭐ NEW: user can also receive ratings & reviews
-    ratings: { type: [Number], default: [] }, // Rating values 0..10
-    reviews: { type: [String], default: [] }, // Text reviews about this user
+    // ⭐ Add Missing Avatar Field
+    avatar: { type: String, default: "" },
+
+    // ⭐ Ratings
+    ratings: { type: [Number], default: [] },
+    reviews: { type: [String], default: [] },
   },
   {
     timestamps: true,
@@ -25,6 +28,7 @@ const userSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
 
 // ⭐ NEW: virtual average rating (0..10, with 1 decimal)
 userSchema.virtual('rating').get(function () {

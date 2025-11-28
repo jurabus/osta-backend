@@ -24,10 +24,16 @@ export const login = async (req, res) => {
 
     const token = sign({ id: user._id, role: 'user', kind: 'user' });
     return ok(res, {
-      token,
-      kind: 'user',
-      user: { _id: user._id, name: user.name, email: user.email }
-    });
+  token,
+  kind: 'user',
+  user: {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar || ""
+  }
+});
+
   } catch (e) {
     return fail(res, 400, e.message);
   }
