@@ -95,6 +95,51 @@ export const topCategories = async (req, res) => {
     return fail(res, 400, e.message);
   }
 };
+// GET ALL categories + ONLY subcategories WITH providers
+export const categoriesWithProviderFiltering = async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ name: 1 }).lean();
+    const result = [];
+
+    for (const cat of categories) {
+      // find subs
+      const subs = await Subcategory.find({ category: cat.name })
+        .sort({ name: 1 })
+        .lean();
+
+      const filteredSubs = [];
+
+      for (const s of subs) {
+        const subCount = await Provider.countDocuments({
+          subcategories: s.name
+        });
+
+        if (subCount > 0) {
+          filteredSubs.push({
+            ...s,
+            providerCount: subCount
+          });
+        }
+      }
+
+      const catCount = await Provider.countDocuments({
+        $or: [{ category: cat.name }, { categories: cat.name }]
+      });
+
+      if (catCount > 0 || filteredSubs.length > 0) {
+        result.push({
+          category: cat,
+          providerCount: catCount,
+          subcategories: filteredSubs
+        });
+      }
+    }
+
+    return ok(res, { items: result });
+  } catch (e) {
+    return fail(res, 500, e.message);
+  }
+};
 
 // Providers by category (by name match) with pagination (20/page)
 export const providersByCategory = async (req, res) => {

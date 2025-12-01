@@ -9,6 +9,7 @@ import {
   providersByCategory,
   categoriesWithProviders,
   allCategoriesAndSubcategories,
+  categoriesWithProviderFiltering,
 } from "../controllers/categoryController.js";
 import { requireAdminKey } from "../middleware/adminKey.js";
 
@@ -18,6 +19,8 @@ const router = express.Router();
 router.get("/", listCategories);
 router.get("/top", topCategories);
 router.get("/with-providers", categoriesWithProviders);
+router.get("/with-providers-filtered", categoriesWithProviderFiltering);
+
 router.get("/:id/providers", providersByCategory);
 router.get(
   "/categories-and-subcategories",
