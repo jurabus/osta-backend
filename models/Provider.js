@@ -16,6 +16,17 @@ const providerSchema = new mongoose.Schema(
     description: { type: String, default: '' },
     skills: { type: [String], default: [] },
     gallery: { type: [String], default: [] },
+	// 🔹 Regions (City/Area filtering)
+regions: {
+  everywhere: { type: Boolean, default: false },
+
+  // Example: ["Cairo", "Giza"]
+  cities: { type: [String], default: [] },
+
+  // Example: ["Nasr City", "Dokki"]
+  areas: { type: [String], default: [] },
+},
+
     ratings: { type: [Number], default: [] },  // Rating values 0..10
     reviews: { type: [String], default: [] },  // Text reviews
   },

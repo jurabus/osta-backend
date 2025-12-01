@@ -73,6 +73,18 @@ export const listProviders = async (req, res) => {
       // match providers whose subcategories array contains this name
       q.subcategories = sub;
     }
+    // --- Region Filters ---
+    const city = req.query.city;
+    const area = req.query.area;
+
+    // --- REGION FILTER (Optimized) ---
+if (city || area) {
+  q.$or = [
+    { "regions.everywhere": true },
+    city ? { "regions.cities": city } : null,
+    area ? { "regions.areas": area } : null
+  ].filter(Boolean);
+}
 
     const minRating =
       req.query.minRating != null ? Number(req.query.minRating) : null;

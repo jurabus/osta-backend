@@ -18,6 +18,7 @@ import fs from "fs";
 import path from "path";
 import subcategoryRoutes from "./routes/subcategoryRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
+import regionRoutes from "./routes/regionRoutes.js";
 
 
 // 🧱 Ensure required upload directories exist
@@ -75,6 +76,7 @@ await connectDB();
 
 // --- Routes
 app.use("/api/categories", categoryRoutes);
+app.use("/api/regions", regionRoutes);
 app.use("/api/subcategories", subcategoryRoutes);
 app.use('/api/upload/chat', chatUploadRoutes);
 app.use('/uploads', express.static('uploads'));
