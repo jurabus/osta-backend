@@ -69,6 +69,20 @@ export const listCategories = async (req, res) => {
   }
 };
 
+//
+// NEW: return ALL categories + ALL subcategories
+export const allCategoriesAndSubcategories = async (req, res) => {
+  try {
+    const categories = await Category.find({}).sort({ name: 1 }).lean();
+    const subcategories = await Subcategory.find({}).sort({ name: 1 }).lean();
+
+    return ok(res, { categories, subcategories });
+  } catch (e) {
+    return fail(res, 400, e.message);
+  }
+};
+
+//
 // Top categories (by name) limit=10 default
 export const topCategories = async (req, res) => {
   try {

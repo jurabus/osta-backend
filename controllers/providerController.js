@@ -115,12 +115,17 @@ export const updateProvider = async (req, res) => {
 
 // Ratings & reviews
 export const addRating = async (req, res) => {
-  const { rating, review } = req.body; // rating 0..10
-  if (rating == null || rating < 0 || rating > 10) return fail(res, 400, 'rating 0..10');
+  const { rating, review } = req.body; // rating 0..5
+  if (rating == null || rating < 0 || rating > 5) {
+    return fail(res, 400, 'rating 0..5');
+  }
+
   const doc = await Provider.findById(req.params.id);
   if (!doc) return fail(res, 404, 'Not found');
+
   doc.ratings.push(Number(rating));
   if (review) doc.reviews.push(review);
+
   await doc.save();
   return ok(res, doc);
 };

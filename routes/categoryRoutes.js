@@ -8,6 +8,7 @@ import {
   topCategories,
   providersByCategory,
   categoriesWithProviders,
+  allCategoriesAndSubcategories,
 } from "../controllers/categoryController.js";
 import { requireAdminKey } from "../middleware/adminKey.js";
 
@@ -18,6 +19,10 @@ router.get("/", listCategories);
 router.get("/top", topCategories);
 router.get("/with-providers", categoriesWithProviders);
 router.get("/:id/providers", providersByCategory);
+router.get(
+  "/categories-and-subcategories",
+  allCategoriesAndSubcategories
+);
 
 // admin
 router.post("/", requireAdminKey, createCategory);
