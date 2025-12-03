@@ -161,27 +161,60 @@ export const updateRequestStatus = async (req, res) => {
     if (!doc) return fail(res, 404, "Request not found");
 
     // If accepted, auto-create chat room
-    if (status === "accepted") {
-  const existing = await Chat.findOne({ requestId: doc._id.toString() });
+   // If accepted, auto-create chat room
+// If accepted, auto-create chat room
+if (status === "accepted") {
+  const reqId = doc._id.toString();
+  const existing = await Chat.findOne({ requestId: reqId });
+
+  // Always insert original request message if missing
+  const originalMessage = doc.message || "";
 
   if (!existing) {
+    // Create fresh chat INCLUDING the request message
     await Chat.create({
-      requestId: doc._id.toString(),
+      requestId: reqId,
       userId: doc.userId,
       providerId: doc.providerId,
-      messages: [
-        {
-          senderId: doc.userId,
-          text: doc.message || "",
-          type: "text",
-          seen: true,
-          delivered: true,
-          system: true,
-          createdAt: new Date(),
-        },
-      ],
+      status: "open",
+      messages: originalMessage
+        ? [
+            {
+              senderId: doc.userId,
+              text: originalMessage,
+              type: "text",
+              seen: true,
+              delivered: true,
+              system: true,
+              createdAt: new Date(),
+            },
+          ]
+        : [],
     });
+  } else {
+    // Chat exists → ensure request message is inserted at top only once
+    const already = existing.messages.some(
+      (m) =>
+        m.system === true &&
+        (m.text || "").trim() === originalMessage.trim()
+    );
+
+    if (originalMessage && !already) {
+      existing.messages.unshift({
+        senderId: doc.userId,
+        text: originalMessage,
+        type: "text",
+        seen: true,
+        delivered: true,
+        system: true,
+        createdAt: new Date(),
+      });
+      await existing.save();
+    }
   }
+}
+
+
 }
 
 
