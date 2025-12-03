@@ -17,6 +17,9 @@ const userSchema = new mongoose.Schema(
 
     // ⭐ Add Missing Avatar Field
     avatar: { type: String, default: "" },
+	lastSeen: { type: Date, default: null },
+online: { type: Boolean, default: false },
+
 
     // ⭐ Ratings
     ratings: { type: [Number], default: [] },

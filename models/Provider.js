@@ -12,6 +12,9 @@ const providerSchema = new mongoose.Schema(
     subcategories: { type: [String], default: [] },   // e.g. ["Logo Design", "Math Tutor"]
 
     avatar: { type: String, default: '' },     // Profile image URL
+	lastSeen: { type: Date, default: null },
+online: { type: Boolean, default: false },
+
     website: { type: String, default: '' },    // Provider’s website link
     description: { type: String, default: '' },
     skills: { type: [String], default: [] },

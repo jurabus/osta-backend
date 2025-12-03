@@ -3,15 +3,54 @@ import Chat from "../models/Chat.js";
 import User from "../models/User.js";
 import Provider from "../models/Provider.js";
 import { ok, fail } from "../utils/responses.js";
+import Request from "../models/Request.js";
 
 // 🟢 Get chat messages by requestId
+// 🟢 Get chat messages by requestId — now includes original request message
 export const getChat = async (req, res) => {
   try {
     const { requestId } = req.params;
+
+    // Load chat
     const chat = await Chat.findOne({ requestId });
-    if (!chat)
-      // keep previous behavior: no 404, empty thread
-      return ok(res, { messages: [] });
+
+    // Load original request (to get initial message)
+    const request = await Request.findById(requestId);
+
+    // Extract original message if exists
+    const requestMessage = request ? request.message : "";
+
+    // Also return requester avatar
+    let userAvatar = "";
+    if (chat?.userId) {
+      const user = await User.findById(chat.userId);
+      userAvatar = user?.avatar || "";
+    }
+
+    // If no chat exists yet → return empty messages but include request message
+    if (!chat) {
+      return ok(res, {
+        messages: [],
+        requestMessage,
+        userAvatar,
+        userId: request?.userId || "",
+        providerId: request?.providerId || "",
+        status: "open"
+      });
+    }
+
+    // Normal chat
+    return ok(res, {
+      ...chat.toObject(),
+      requestMessage,
+      userAvatar
+    });
+
+  } catch (e) {
+    return fail(res, 400, e.message);
+  }
+};
+    return ok(res, { messages: [] });
 
     return ok(res, chat);
   } catch (e) {
@@ -148,8 +187,8 @@ export const addReview = async (req, res) => {
         return fail(res, 400, "Missing rating");
       }
       const numericRating = Number(rating);
-      if (numericRating < 0 || numericRating > 10) {
-        return fail(res, 400, "Rating must be between 0 and 10");
+      if (numericRating < 0 || numericRating > 5) {
+        return fail(res, 400, "Rating must be between 0 and 5");
       }
 
       if (isUser) {
