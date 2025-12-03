@@ -162,16 +162,28 @@ export const updateRequestStatus = async (req, res) => {
 
     // If accepted, auto-create chat room
     if (status === "accepted") {
-      const existing = await Chat.findOne({ requestId: doc._id.toString() });
-      if (!existing) {
-        await Chat.create({
-          requestId: doc._id.toString(),
-          userId: doc.userId,
-          providerId: doc.providerId,
-          messages: [],
-        });
-      }
-    }
+  const existing = await Chat.findOne({ requestId: doc._id.toString() });
+
+  if (!existing) {
+    await Chat.create({
+      requestId: doc._id.toString(),
+      userId: doc.userId,
+      providerId: doc.providerId,
+      messages: [
+        {
+          senderId: doc.userId,
+          text: doc.message || "",
+          type: "text",
+          seen: true,
+          delivered: true,
+          system: true,
+          createdAt: new Date(),
+        },
+      ],
+    });
+  }
+}
+
 
     return ok(res, doc);
   } catch (e) {
