@@ -90,7 +90,13 @@ export const providersBySubcategory = async (req, res) => {
     const sub = await Subcategory.findById(id);
     if (!sub) return fail(res, 404, "Subcategory not found");
 
-    const q = { subcategories: sub.name };
+    const q = {
+  $or: [
+    { subcategories: sub.name.trim() },    // legacy name matching
+    { subcategoryIds: sub._id.toString() } // NEW: correct ID matching
+  ]
+};
+
 
     let docs = await Provider.find(q)
       .sort({ createdAt: -1 })
