@@ -2,11 +2,11 @@
 import Chat from "../models/Chat.js";
 import User from "../models/User.js";
 import Provider from "../models/Provider.js";
-import { ok, fail } from "../utils/responses.js";
 import Request from "../models/Request.js";
+import { ok, fail } from "../utils/responses.js";
 
 // ======================================================
-// 🟢 Get chat by requestId (includes requestMessage + avatars)
+// 🟢 Get chat by requestId (ALWAYS includes requestMessage)
 // ======================================================
 export const getChat = async (req, res) => {
   try {
@@ -15,38 +15,49 @@ export const getChat = async (req, res) => {
     // Load chat
     const chat = await Chat.findOne({ requestId });
 
-    // Load original request (needed for initial message)
+    // Load request (for initial message + IDs)
     const request = await Request.findById(requestId);
-    const requestMessage = request ? (request.message || "") : "";
 
-    // Load both avatars
+    const requestMessage = request?.message || "";
+    const reqUserId = request?.userId || "";
+    const reqProviderId = request?.providerId || "";
+
+    // Load avatars
     let userAvatar = "";
     let providerAvatar = "";
 
     if (chat?.userId) {
-      const user = await User.findById(chat.userId);
-      userAvatar = user?.avatar || "";
+      const usr = await User.findById(chat.userId);
+      userAvatar = usr?.avatar || "";
+    } else if (reqUserId) {
+      const usr = await User.findById(reqUserId);
+      userAvatar = usr?.avatar || "";
     }
 
     if (chat?.providerId) {
-      const provider = await Provider.findById(chat.providerId);
-      providerAvatar = provider?.avatar || "";
+      const prov = await Provider.findById(chat.providerId);
+      providerAvatar = prov?.avatar || "";
+    } else if (reqProviderId) {
+      const prov = await Provider.findById(reqProviderId);
+      providerAvatar = prov?.avatar || "";
     }
 
-    // If no chat exists (chat not created yet), return metadata + request message
+    // If chat does not exist, return meta + requestMessage (frontend inserts msg bubble)
     if (!chat) {
       return ok(res, {
         messages: [],
         requestMessage,
         userAvatar,
         providerAvatar,
-        userId: request?.userId || "",
-        providerId: request?.providerId || "",
+        userId: reqUserId,
+        providerId: reqProviderId,
         status: "open",
+        userReviewed: false,
+        providerReviewed: false,
       });
     }
 
-    // Return full chat object
+    // Full chat return
     return ok(res, {
       ...chat.toObject(),
       requestMessage,
@@ -77,15 +88,15 @@ export const markSeen = async (req, res) => {
     );
 
     if (!chat) return ok(res, { messages: [] });
-
     return ok(res, chat);
+
   } catch (e) {
     return fail(res, 400, e.message);
   }
 };
 
 // ======================================================
-// 🟢 Send message (fully fixed - no forced type=image)
+// 🟢 Send message (corrected type + proper creation)
 // ======================================================
 export const sendMessage = async (req, res) => {
   try {
@@ -95,13 +106,13 @@ export const sendMessage = async (req, res) => {
     if (!senderId || (!text && !fileUrl))
       return fail(res, 400, "Missing fields");
 
-    // Prevent sending to closed chat
+    // Check if chat closed
     const existingChat = await Chat.findOne({ requestId });
     if (existingChat && existingChat.status === "closed") {
-      return fail(res, 400, "Chat is closed. You cannot send new messages.");
+      return fail(res, 400, "Chat is closed. You cannot send messages.");
     }
 
-    const newMessage = {
+    const message = {
       senderId,
       text: text || "",
       type: type || (fileUrl ? "image" : "text"),
@@ -111,13 +122,14 @@ export const sendMessage = async (req, res) => {
       createdAt: new Date(),
     };
 
-    const chat = await Chat.findOneAndUpdate(
+    const updated = await Chat.findOneAndUpdate(
       { requestId },
-      { $push: { messages: newMessage } },
+      { $push: { messages: message } },
       { new: true, upsert: true }
     );
 
-    return ok(res, chat);
+    return ok(res, updated);
+
   } catch (e) {
     return fail(res, 400, e.message);
   }
@@ -139,27 +151,25 @@ export const closeChat = async (req, res) => {
     const isUser = chat.userId === closerId;
     const isProvider = chat.providerId === closerId;
 
-    if (!isUser && !isProvider) {
-      return fail(res, 403, "Not allowed to close this chat");
-    }
+    if (!isUser && !isProvider)
+      return fail(res, 403, "You cannot close this chat");
 
-    if (chat.status === "closed") {
+    if (chat.status === "closed")
       return ok(res, chat);
-    }
 
     chat.status = "closed";
     chat.closedAt = new Date();
-
     await chat.save();
 
     return ok(res, chat);
+
   } catch (e) {
     return fail(res, 400, e.message);
   }
 };
 
 // ======================================================
-// 🟢 Add review (0–5 scale, skip allowed, each side only once)
+// 🟢 Add review (skip allowed, 0–5 scale, no double-review)
 // ======================================================
 export const addReview = async (req, res) => {
   try {
@@ -171,60 +181,57 @@ export const addReview = async (req, res) => {
     const chat = await Chat.findOne({ requestId });
     if (!chat) return fail(res, 404, "Chat not found");
 
-    if (chat.status !== "closed") {
-      return fail(res, 400, "Chat must be closed before submitting a review");
-    }
+    if (chat.status !== "closed")
+      return fail(res, 400, "Chat must be closed before reviewing");
 
     const isUser = chat.userId === reviewerId;
     const isProvider = chat.providerId === reviewerId;
 
-    if (!isUser && !isProvider) {
-      return fail(res, 403, "You are not part of this chat");
-    }
+    if (!isUser && !isProvider)
+      return fail(res, 403, "Not part of this chat");
 
-    if (isUser && chat.userReviewed) {
+    // Prevent double-review
+    if (isUser && chat.userReviewed)
       return fail(res, 400, "User already reviewed");
-    }
-    if (isProvider && chat.providerReviewed) {
-      return fail(res, 400, "Provider already reviewed");
-    }
 
-    // If submitting rating (not skip)
+    if (isProvider && chat.providerReviewed)
+      return fail(res, 400, "Provider already reviewed");
+
+    // Only rate if not skip
     if (!skip) {
       if (rating == null)
         return fail(res, 400, "Missing rating");
 
-      const numericRating = Number(rating);
-      if (numericRating < 0 || numericRating > 5)
+      const numeric = Number(rating);
+      if (numeric < 0 || numeric > 5)
         return fail(res, 400, "Rating must be between 0 and 5");
 
-      // USER → reviews PROVIDER
       if (isUser) {
         const provider = await Provider.findById(chat.providerId);
         if (provider) {
-          provider.ratings.push(numericRating);
+          provider.ratings.push(numeric);
           if (review) provider.reviews.push(review);
           await provider.save();
         }
       }
 
-      // PROVIDER → reviews USER
       if (isProvider) {
         const user = await User.findById(chat.userId);
         if (user) {
-          user.ratings.push(numericRating);
+          user.ratings.push(numeric);
           if (review) user.reviews.push(review);
           await user.save();
         }
       }
     }
 
+    // Mark review as done
     if (isUser) chat.userReviewed = true;
     if (isProvider) chat.providerReviewed = true;
 
     await chat.save();
-
     return ok(res, chat);
+
   } catch (e) {
     return fail(res, 400, e.message);
   }
