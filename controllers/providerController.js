@@ -104,12 +104,24 @@ if (city || area) {
 
 export const updateProvider = async (req, res) => {
   try {
-    const doc = await Provider.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    return doc ? ok(res, doc) : fail(res, 404, 'Not found');
+    // 🔹 Keep legacy single "category" in sync with new "categories" array
+    if (
+      !req.body.category &&
+      Array.isArray(req.body.categories) &&
+      req.body.categories.length > 0
+    ) {
+      req.body.category = req.body.categories[0];
+    }
+
+    const doc = await Provider.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    return doc ? ok(res, doc) : fail(res, 404, "Not found");
   } catch (e) {
     return fail(res, 400, e.message);
   }
 };
+
 
 
 
