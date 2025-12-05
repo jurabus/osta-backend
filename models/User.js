@@ -23,7 +23,15 @@ online: { type: Boolean, default: false },
 
     // ⭐ Ratings
     ratings: { type: [Number], default: [] },
-    reviews: { type: [String], default: [] },
+    reviews: [
+  {
+    reviewerId: { type: String, required: true },
+    text: { type: String, default: "" },
+    rating: { type: Number, required: true },
+    createdAt: { type: Date, default: Date.now }
+  }
+],
+
   },
   {
     timestamps: true,
@@ -35,9 +43,14 @@ online: { type: Boolean, default: false },
 
 // ⭐ NEW: virtual average rating (0..10, with 1 decimal)
 userSchema.virtual('rating').get(function () {
-  if (!this.ratings || this.ratings.length === 0) return 0;
-  const sum = this.ratings.reduce((a, b) => a + b, 0);
-  return Math.round((sum / this.ratings.length) * 10) / 10;
+  if (!this.ratings?.length) return 0;
+  const avg = this.ratings.reduce((a, b) => a + b, 0) / this.ratings.length;
+  return Math.round(avg * 10) / 10;   // ⭐ formatted to 1 decimal, still /5
+});
+
+// ⭐ NEW: total number of submitted ratings
+userSchema.virtual('ratingCount').get(function () {
+  return this.ratings?.length || 0;
 });
 
 userSchema.pre('save', async function (next) {

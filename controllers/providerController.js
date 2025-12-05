@@ -136,7 +136,12 @@ export const addRating = async (req, res) => {
   if (!doc) return fail(res, 404, 'Not found');
 
   doc.ratings.push(Number(rating));
-  if (review) doc.reviews.push(review);
+  doc.reviews.push({
+  reviewerId: req.body.reviewerId,
+  text: req.body.review || "",
+  rating: Number(rating),
+  createdAt: new Date()
+});
 
   await doc.save();
   return ok(res, doc);
